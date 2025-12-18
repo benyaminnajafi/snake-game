@@ -7,7 +7,7 @@ A classic Snake game built with vanilla HTML5, CSS3, and JavaScript. Single-file
 ## About
 
 This is a classic Snake game implementation:
-- **Single-file**: Everything in one HTML file - no build process needed
+- **Clean structure**: Separated HTML, CSS, and JavaScript files
 - **Zero dependencies**: Pure vanilla JavaScript, HTML5 Canvas, and CSS3
 - **Retro style**: Pixelated graphics with classic green snake
 - **Responsive**: Works on desktop and mobile devices
@@ -41,14 +41,18 @@ Play the game online: **[https://ghaochghaoch.ir](https://ghaochghaoch.ir)**
 
 ```
 .
-├── index.html    # Main game file (everything in one file)
-└── README.md     # This file
+├── index.html          # Main HTML file
+├── css/
+│   └── style.css      # All game styles
+├── js/
+│   └── game.js        # Game logic and engine
+└── README.md          # This file
 ```
 
-The entire game is contained in `index.html`:
-- HTML structure in `<body>`
-- CSS styles in `<style>` tag
-- JavaScript game engine in `<script>` tag
+The game is organized into separate files:
+- **index.html**: HTML structure and page layout
+- **css/style.css**: All styling and visual design
+- **js/game.js**: Game logic, rendering, and controls
 
 ## Running Locally
 
@@ -56,7 +60,7 @@ Simply open `index.html` in your browser. No server needed!
 
 ## Customization
 
-You can customize the game by modifying constants in `index.html`:
+You can customize the game by modifying constants in `js/game.js`:
 
 ```javascript
 const CONFIG = {
@@ -64,6 +68,18 @@ const CONFIG = {
     GRID_SIZE: 25,          // Grid dimensions (25×25)
     TICK_INTERVAL: 150,     // Game speed (milliseconds)
     INITIAL_LENGTH: 3       // Starting snake length
+};
+```
+
+You can also customize colors in `js/game.js`:
+
+```javascript
+const COLORS = {
+    background: '#0f0f1e',
+    snake: '#00ff00',
+    snakeHead: '#00cc00',
+    food: '#ff0000',
+    // ... more colors
 };
 ```
 
