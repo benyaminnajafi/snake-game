@@ -2,6 +2,8 @@
 
 A classic Snake game built with vanilla HTML5, CSS3, and JavaScript. Single-file, zero dependencies, and ready to play!
 
+![Game Screenshot](Screenshot.png)
+
 ## About
 
 This is a classic Snake game implementation:
