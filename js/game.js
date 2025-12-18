@@ -55,7 +55,8 @@ const gameState = {
     highScore: parseInt(localStorage.getItem('snakeHighScore')) || 0,
     gameOver: false,
     lastTick: 0,
-    currentSpeed: 150  // Dynamic speed (starts at TICK_INTERVAL)
+    currentSpeed: 150,  // Dynamic speed (starts at TICK_INTERVAL)
+    newHighScorePlayed: false  // Flag to prevent repeated new high score sound
 };
 
 // Canvas Setup
@@ -105,8 +106,23 @@ function drawCell(x, y, color) {
     );
 }
 
+// New high score sound
+const newHighScoreAudio = new Audio('sound/bababenazam.m4a');
+
+function playNewHighScoreSound() {
+    newHighScoreAudio.currentTime = 0;
+    newHighScoreAudio.play().catch(() => {});
+}
+
 function updateScoreDisplay() {
     document.getElementById('score').textContent = gameState.score;
+    
+    // Check if we beat the previous high score (only play sound once)
+    const previousHighScore = parseInt(localStorage.getItem('snakeHighScore')) || 0;
+    if (gameState.score > previousHighScore && !gameState.newHighScorePlayed) {
+        gameState.newHighScorePlayed = true;
+        playNewHighScoreSound();
+    }
     
     // Update high score if current score is higher
     if (gameState.score > gameState.highScore) {
@@ -315,6 +331,7 @@ function resetGame() {
     gameState.gameOver = false;
     gameState.lastTick = performance.now();
     gameState.currentSpeed = CONFIG.TICK_INTERVAL;  // Reset speed
+    gameState.newHighScorePlayed = false;  // Reset high score sound flag
     
     hideGameOverOverlay();
     updateScoreDisplay();
