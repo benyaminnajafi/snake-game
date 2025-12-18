@@ -39,6 +39,16 @@ body {
     font-weight: bold;
     color: #FFE135;
     text-shadow: 2px 2px 0px #000;
+    display: flex;
+    gap: 40px;
+}
+
+.current-score {
+    color: #FFE135;
+}
+
+.high-score {
+    color: #FF6B6B;
 }
 
 #game {

@@ -52,6 +52,7 @@ const gameState = {
     nextDirection: 'right',
     food: { x: 0, y: 0 },
     score: 0,
+    highScore: parseInt(localStorage.getItem('snakeHighScore')) || 0,
     gameOver: false,
     lastTick: 0
 };
@@ -105,6 +106,13 @@ function drawCell(x, y, color) {
 
 function updateScoreDisplay() {
     document.getElementById('score').textContent = gameState.score;
+    
+    // Update high score if current score is higher
+    if (gameState.score > gameState.highScore) {
+        gameState.highScore = gameState.score;
+        localStorage.setItem('snakeHighScore', gameState.highScore);
+    }
+    document.getElementById('high-score').textContent = gameState.highScore;
 }
 
 // Audio Functions
@@ -265,6 +273,9 @@ function init() {
         console.error('Failed to initialize canvas!');
         return;
     }
+    
+    // Load and display high score on start
+    document.getElementById('high-score').textContent = gameState.highScore;
     
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
