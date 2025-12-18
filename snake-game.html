@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .score-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            font-size: 24px;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        #game {
+            border: 3px solid #333;
+            background-color: #0f0f1e;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            max-width: 100%;
+            max-height: calc(100% - 80px);
+            width: auto;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="score-display">Score: <span id="score">0</span></div>
+        <canvas id="game" width="100" height="100"></canvas>
+    </div>
+
+    <script>
+        // Configuration Constants
+        const CONFIG = {
+            CELL_SIZE: 4,
+            GRID_SIZE: 25,
+            CANVAS_SIZE: 100,
+            TICK_INTERVAL: 150,
+            INITIAL_LENGTH: 3
+        };
+
+        // Color Palette
+        const COLORS = {
+            background: '#0f0f1e',
+            snake: '#00ff00',
+            snakeHead: '#00cc00',
+            food: '#ff0000',
+            gameOverOverlay: 'rgba(0, 0, 0, 0.7)',
+            gameOverText: '#ffffff'
+        };
+
+        // Direction Vectors
+        const DIRECTIONS = {
+            up: { x: 0, y: -1 },
+            down: { x: 0, y: 1 },
+            left: { x: -1, y: 0 },
+            right: { x: 1, y: 0 }
+        };
+
+        // Opposite Directions (for preventing 180-degree turns)
+        const OPPOSITES = {
+            up: 'down',
+            down: 'up',
+            left: 'right',
+            right: 'left'
+        };
+
+        // Keyboard Mapping
+        const KEY_MAP = {
+            ArrowUp: 'up',
+            ArrowDown: 'down',
+            ArrowLeft: 'left',
+            ArrowRight: 'right',
+            w: 'up',
+            s: 'down',
+            a: 'left',
+            d: 'right'
+        };
+
+        // Game State
+        const gameState = {
+            snake: [],
+            direction: 'right',
+            nextDirection: 'right',
+            food: { x: 0, y: 0 },
+            score: 0,
+            gameOver: false,
+            lastTick: 0
+        };
+
+        // Canvas Setup
+        const canvas = document.getElementById('game');
+        if (!canvas) {
+            console.error('Canvas element not found!');
+        }
+        const ctx = canvas ? canvas.getContext('2d') : null;
+
+        // Helper Functions
+        function wrapCoordinate(value, max) {
+            return ((value % max) + max) % max;
+        }
+
+        function isOnSnake(position) {
+            return gameState.snake.some(segment => 
+                segment.x === position.x && segment.y === position.y
+            );
+        }
+
+        function checkSelfCollision(head) {
+            return gameState.snake.slice(1).some(segment => 
+                segment.x === head.x && segment.y === head.y
+            );
+        }
+
+        function generateFood() {
+            let position;
+            do {
+                position = {
+                    x: Math.floor(Math.random() * CONFIG.GRID_SIZE),
+                    y: Math.floor(Math.random() * CONFIG.GRID_SIZE)
+                };
+            } while (isOnSnake(position));
+            return position;
+        }
+
+        function drawCell(x, y, color) {
+            if (!ctx) return;
+            ctx.fillStyle = color;
+            ctx.fillRect(
+                x * CONFIG.CELL_SIZE,
+                y * CONFIG.CELL_SIZE,
+                CONFIG.CELL_SIZE,
+                CONFIG.CELL_SIZE
+            );
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score').textContent = gameState.score;
+        }
+
+        // Sound Effect Function
+        let audioContext = null;
+        function playEatSound() {
+            try {
+                // Create AudioContext once and reuse it
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Resume context if suspended (browsers require user interaction)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().catch(() => {});
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                // Silently fail if audio context is not available
+                console.warn('Audio not available:', e);
+            }
+        }
+
+        // Canvas Scaling Function
+        function resizeCanvas() {
+            if (!canvas) return;
+            
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            
+            // Use smaller dimension to maintain aspect ratio, ensure minimum size
+            const size = Math.max(200, Math.min(vw, vh) - 100); // Leave some margin for score display
+            
+            // Set canvas display size while maintaining internal resolution
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            canvas.style.margin = '0';
+        }
+
+        // Game Logic Functions
+        function tick() {
+            if (gameState.gameOver) return;
+
+            // Apply next direction
+            gameState.direction = gameState.nextDirection;
+
+            // Get current head
+            const head = gameState.snake[0];
+            const dir = DIRECTIONS[gameState.direction];
+
+            // Calculate new head position
+            let newHead = {
+                x: wrapCoordinate(head.x + dir.x, CONFIG.GRID_SIZE),
+                y: wrapCoordinate(head.y + dir.y, CONFIG.GRID_SIZE)
+            };
+
+            // Check self collision
+            if (checkSelfCollision(newHead)) {
+                gameState.gameOver = true;
+                return;
+            }
+
+            // Add new head
+            gameState.snake.unshift(newHead);
+
+            // Check food collision
+            if (newHead.x === gameState.food.x && newHead.y === gameState.food.y) {
+                // Eat food
+                gameState.score++;
+                gameState.food = generateFood();
+                updateScoreDisplay();
+                playEatSound();
+            } else {
+                // Remove tail if not eating
+                gameState.snake.pop();
+            }
+        }
+
+        // Rendering Functions
+        function drawGameOver() {
+            if (!ctx) return;
+            ctx.fillStyle = COLORS.gameOverOverlay;
+            ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
+            
+            ctx.fillStyle = COLORS.gameOverText;
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GAME', CONFIG.CANVAS_SIZE / 2, CONFIG.CANVAS_SIZE / 2 - 6);
+            ctx.fillText('OVER', CONFIG.CANVAS_SIZE / 2, CONFIG.CANVAS_SIZE / 2 + 6);
+        }
+
+        function render() {
+            if (!ctx) return;
+            // Clear canvas
+            ctx.fillStyle = COLORS.background;
+            ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
+
+            // Draw food
+            drawCell(gameState.food.x, gameState.food.y, COLORS.food);
+
+            // Draw snake
+            gameState.snake.forEach((segment, index) => {
+                const color = index === 0 ? COLORS.snakeHead : COLORS.snake;
+                drawCell(segment.x, segment.y, color);
+            });
+
+            // Draw game over overlay
+            if (gameState.gameOver) {
+                drawGameOver();
+            }
+        }
+
+        // Input Handling
+        function setDirection(newDir) {
+            if (!gameState.gameOver && OPPOSITES[newDir] !== gameState.direction) {
+                gameState.nextDirection = newDir;
+            }
+        }
+
+        // Keyboard Controls
+        document.addEventListener('keydown', (e) => {
+            const dir = KEY_MAP[e.key];
+            if (dir) {
+                e.preventDefault();
+                setDirection(dir);
+            }
+
+            // Spacebar to restart
+            if (e.key === ' ' || e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                resetGame();
+            }
+        });
+
+        // Reset Function
+        function resetGame() {
+            const centerX = Math.floor(CONFIG.GRID_SIZE / 2);
+            const centerY = Math.floor(CONFIG.GRID_SIZE / 2);
+
+            gameState.snake = [
+                { x: centerX, y: centerY },
+                { x: centerX - 1, y: centerY },
+                { x: centerX - 2, y: centerY }
+            ];
+            gameState.direction = 'right';
+            gameState.nextDirection = 'right';
+            gameState.food = generateFood();
+            gameState.score = 0;
+            gameState.gameOver = false;
+            gameState.lastTick = performance.now();
+
+            updateScoreDisplay();
+        }
+
+        // Game Loop
+        function gameLoop(timestamp) {
+            const elapsed = timestamp - gameState.lastTick;
+
+            if (elapsed >= CONFIG.TICK_INTERVAL && !gameState.gameOver) {
+                tick();
+                gameState.lastTick = timestamp;
+            }
+
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize Game
+        function init() {
+            if (!canvas || !ctx) {
+                console.error('Failed to initialize canvas!');
+                return;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            resetGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
