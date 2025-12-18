@@ -12,6 +12,10 @@ This is a classic Snake game implementation:
 
 The game uses wrap-around mechanics (snake wraps around screen edges).
 
+## 🎮 Live Demo
+
+Play the game online: **[https://ghaochghaoch.ir](https://ghaochghaoch.ir)**
+
 ## Features
 
 - Classic Snake gameplay
