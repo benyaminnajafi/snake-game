@@ -64,3 +64,82 @@ body {
     height: auto;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
+
+/* Game Over Overlay */
+.game-over-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(41, 82, 227, 0.95);
+    z-index: 100;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.game-over-overlay.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.game-over-content {
+    text-align: center;
+    padding: 40px;
+}
+
+.game-over-content h1 {
+    font-size: 72px;
+    color: #FFE135;
+    text-shadow: 4px 4px 0px #000;
+    margin-bottom: 20px;
+    letter-spacing: 6px;
+    line-height: 1.1;
+}
+
+.game-over-content h1 span {
+    display: block;
+}
+
+.game-over-content p {
+    font-size: 28px;
+    color: #fff;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 0px #000;
+}
+
+.play-again-btn {
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 15px 40px;
+    background: #5CBF45;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-shadow: 2px 2px 0px #000;
+    box-shadow: 0 4px 0px #3D8B2E, 0 8px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.1s ease;
+}
+
+.play-again-btn:hover {
+    background: #7EE868;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0px #3D8B2E, 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
+.play-again-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px #3D8B2E, 0 4px 12px rgba(0, 0, 0, 0.3);
+}

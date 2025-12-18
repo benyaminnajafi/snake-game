@@ -227,6 +227,7 @@ function tick() {
     if (checkSelfCollision(newHead)) {
         gameState.gameOver = true;
         playGameOverSound();
+        showGameOverOverlay();
         return;
     }
     
@@ -250,16 +251,13 @@ function tick() {
     }
 }
 
-function drawGameOver() {
-    if (!ctx) return;
-    ctx.fillStyle = COLORS.gameOverOverlay;
-    ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
-    ctx.fillStyle = COLORS.gameOverText;
-    ctx.font = 'bold 12px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('GAME', CONFIG.CANVAS_SIZE / 2, CONFIG.CANVAS_SIZE / 2 - 6);
-    ctx.fillText('OVER', CONFIG.CANVAS_SIZE / 2, CONFIG.CANVAS_SIZE / 2 + 6);
+function showGameOverOverlay() {
+    document.getElementById('final-score').textContent = gameState.score;
+    document.getElementById('game-over-overlay').classList.remove('hidden');
+}
+
+function hideGameOverOverlay() {
+    document.getElementById('game-over-overlay').classList.add('hidden');
 }
 
 function render() {
@@ -278,10 +276,7 @@ function render() {
         drawCell(segment.x, segment.y, color);
     });
     
-    // Draw game over overlay
-    if (gameState.gameOver) {
-        drawGameOver();
-    }
+    // Game over is now handled by HTML overlay
 }
 
 function setDirection(newDir) {
@@ -321,6 +316,7 @@ function resetGame() {
     gameState.lastTick = performance.now();
     gameState.currentSpeed = CONFIG.TICK_INTERVAL;  // Reset speed
     
+    hideGameOverOverlay();
     updateScoreDisplay();
 }
 
@@ -346,6 +342,9 @@ function init() {
     
     // Load and display high score on start
     document.getElementById('high-score').textContent = gameState.highScore;
+    
+    // Play Again button click handler
+    document.getElementById('play-again-btn').addEventListener('click', resetGame);
     
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
