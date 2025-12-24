@@ -106,6 +106,93 @@ function drawCell(x, y, color) {
     );
 }
 
+// Draw rounded cell (for snake body) with shadow
+function drawRoundedCell(x, y, color) {
+    if (!ctx) return;
+    const px = x * CONFIG.CELL_SIZE;
+    const py = y * CONFIG.CELL_SIZE;
+    const size = CONFIG.CELL_SIZE;
+    const radius = size * 0.3;
+    
+    // Draw shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+        ctx.roundRect(px + 1, py + 1, size, size, radius);
+    } else {
+        ctx.moveTo(px + 1 + radius, py + 1);
+        ctx.lineTo(px + 1 + size - radius, py + 1);
+        ctx.quadraticCurveTo(px + 1 + size, py + 1, px + 1 + size, py + 1 + radius);
+        ctx.lineTo(px + 1 + size, py + 1 + size - radius);
+        ctx.quadraticCurveTo(px + 1 + size, py + 1 + size, px + 1 + size - radius, py + 1 + size);
+        ctx.lineTo(px + 1 + radius, py + 1 + size);
+        ctx.quadraticCurveTo(px + 1, py + 1 + size, px + 1, py + 1 + size - radius);
+        ctx.lineTo(px + 1, py + 1 + radius);
+        ctx.quadraticCurveTo(px + 1, py + 1, px + 1 + radius, py + 1);
+        ctx.closePath();
+    }
+    ctx.fill();
+    
+    // Draw main cell with gradient
+    const gradient = ctx.createLinearGradient(px, py, px + size, py + size);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(1, COLORS.snakeHead);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+        ctx.roundRect(px, py, size, size, radius);
+    } else {
+        ctx.moveTo(px + radius, py);
+        ctx.lineTo(px + size - radius, py);
+        ctx.quadraticCurveTo(px + size, py, px + size, py + radius);
+        ctx.lineTo(px + size, py + size - radius);
+        ctx.quadraticCurveTo(px + size, py + size, px + size - radius, py + size);
+        ctx.lineTo(px + radius, py + size);
+        ctx.quadraticCurveTo(px, py + size, px, py + size - radius);
+        ctx.lineTo(px, py + radius);
+        ctx.quadraticCurveTo(px, py, px + radius, py);
+        ctx.closePath();
+    }
+    ctx.fill();
+}
+
+// Draw food as a glowing circle
+function drawFood(x, y) {
+    if (!ctx) return;
+    const px = x * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+    const py = y * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+    const radius = CONFIG.CELL_SIZE * 0.45;
+    
+    // Add pulsing animation based on time
+    const time = Date.now() * 0.005;
+    const pulse = 1 + Math.sin(time) * 0.1;
+    const currentRadius = radius * pulse;
+    
+    // Draw glow/shadow
+    const gradient = ctx.createRadialGradient(px, py, 0, px, py, currentRadius * 1.5);
+    gradient.addColorStop(0, COLORS.food);
+    gradient.addColorStop(0.7, '#FFD700');
+    gradient.addColorStop(1, 'rgba(255, 225, 53, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(px, py, currentRadius * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw main food circle
+    ctx.fillStyle = COLORS.food;
+    ctx.beginPath();
+    ctx.arc(px, py, currentRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.beginPath();
+    ctx.arc(px - currentRadius * 0.3, py - currentRadius * 0.3, currentRadius * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+}
+
 // Calculate distance to food (Manhattan distance)
 function getDistanceToFood() {
     const head = gameState.snake[0];
@@ -135,8 +222,21 @@ function drawSnakeHead(x, y) {
         else if (dir === 'up') { mouthY = -1; }
         else { mouthY = 1; }
         
-        // Draw head base (circle)
-        ctx.fillStyle = COLORS.snakeHead;
+        // Draw shadow for head
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.beginPath();
+        ctx.arc(px + center + 1, py + center + 1, center, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw head base (circle) with gradient
+        const headGradient = ctx.createRadialGradient(
+            px + center - size * 0.2, py + center - size * 0.2, 0,
+            px + center, py + center, center
+        );
+        headGradient.addColorStop(0, '#9FFF8A');
+        headGradient.addColorStop(1, COLORS.snakeHead);
+        
+        ctx.fillStyle = headGradient;
         ctx.beginPath();
         ctx.arc(px + center, py + center, center, 0, Math.PI * 2);
         ctx.fill();
@@ -277,8 +377,21 @@ function drawSnakeHead(x, y) {
             ctx.fill();
         }
     } else {
-        // Draw normal closed head (circle with eyes)
-        ctx.fillStyle = COLORS.snakeHead;
+        // Draw shadow for closed head
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.beginPath();
+        ctx.arc(px + center + 1, py + center + 1, center, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw normal closed head (circle with eyes) with gradient
+        const headGradient = ctx.createRadialGradient(
+            px + center - size * 0.2, py + center - size * 0.2, 0,
+            px + center, py + center, center
+        );
+        headGradient.addColorStop(0, '#9FFF8A');
+        headGradient.addColorStop(1, COLORS.snakeHead);
+        
+        ctx.fillStyle = headGradient;
         ctx.beginPath();
         ctx.arc(px + center, py + center, center, 0, Math.PI * 2);
         ctx.fill();
@@ -486,8 +599,8 @@ function render() {
     ctx.fillStyle = COLORS.background;
     ctx.fillRect(0, 0, CONFIG.CANVAS_SIZE, CONFIG.CANVAS_SIZE);
     
-    // Draw food
-    drawCell(gameState.food.x, gameState.food.y, COLORS.food);
+    // Draw food (as glowing circle)
+    drawFood(gameState.food.x, gameState.food.y);
     
     // Draw snake
     gameState.snake.forEach((segment, index) => {
@@ -495,7 +608,8 @@ function render() {
             // Draw head with mouth animation
             drawSnakeHead(segment.x, segment.y);
         } else {
-            drawCell(segment.x, segment.y, COLORS.snake);
+            // Draw rounded body segments for smoother look
+            drawRoundedCell(segment.x, segment.y, COLORS.snake);
         }
     });
     
